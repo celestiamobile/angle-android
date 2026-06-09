@@ -30,15 +30,23 @@ Each CI run produces:
 
 ## Using the AAR in a Gradle project
 
-```gradle
+Published as a static Maven repo on GitHub Pages — no authentication needed:
+
+```kotlin
+// settings.gradle.kts or root build.gradle.kts
+repositories {
+    maven { url = uri("https://celestiamobile.github.io/angle-android/") }
+}
+
+// app/build.gradle.kts
 android {
     buildFeatures {
-        prefab true
+        prefab = true
     }
 }
 
 dependencies {
-    implementation files("libs/angle-android.aar")
+    implementation("space.celestia:angle-android:<version>@aar")
 }
 ```
 
