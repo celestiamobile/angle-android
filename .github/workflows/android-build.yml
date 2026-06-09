@@ -1,0 +1,125 @@
+name: ANGLE Android Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Release version, e.g. 1.0.0 (leave empty to skip release)'
+        required: false
+        type: string
+
+jobs:
+  build-all:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Android
+            arch: arm64
+          - platform: Android
+            arch: arm
+          - platform: Android
+            arch: x64
+    name: Build ${{ matrix.platform }} (${{ matrix.arch }})
+    uses: ./.github/workflows/build-template.yml
+    with:
+      platform: ${{ matrix.platform }}
+      arch: ${{ matrix.arch }}
+
+  package:
+    name: Package AAR & jniLibs
+    needs: build-all
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends zip unzip openjdk-17-jdk-headless
+
+      - name: Download arm64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Android.arm64
+          path: artifacts/arm64
+
+      - name: Download arm Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Android.arm
+          path: artifacts/arm
+
+      - name: Download x64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Android.x64
+          path: artifacts/x64
+
+      - name: Stage per-ABI outputs
+        run: |
+          mkdir -p staging
+          for arch in arm64 arm x64; do
+            tar -xzf "artifacts/$arch/angle-$arch.tar.gz" -C staging
+          done
+          ls -R staging
+
+      - name: Assemble AAR and jniLibs zip
+        run: |
+          chmod +x package_aar.sh
+          ./package_aar.sh "$PWD/staging" "$PWD/dist"
+          ls -lh dist
+
+      - name: Upload AAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: angle-android-aar
+          path: dist/angle-android.aar
+          retention-days: 30
+
+      - name: Upload jniLibs Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: angle-android-jniLibs
+          path: dist/angle-android-jniLibs.zip
+          retention-days: 30
+
+      - name: Create Release
+        if: github.event_name == 'workflow_dispatch' && inputs.version_name != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version_name }}
+          name: ${{ inputs.version_name }}
+          files: |
+            dist/angle-android.aar
+            dist/angle-android-jniLibs.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to GitHub Pages Maven repo
+        if: github.event_name == 'workflow_dispatch' && inputs.version_name != ''
+        env:
+          VERSION: ${{ inputs.version_name }}
+        run: |
+          chmod +x publish_maven.sh
+          ./publish_maven.sh "$VERSION" "$PWD/dist/angle-android.aar" "$PWD/maven-out"
+
+      - name: Deploy Maven repo to gh-pages
+        if: github.event_name == 'workflow_dispatch' && inputs.version_name != ''
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./maven-out
+          publish_branch: gh-pages
+          keep_files: true
+          commit_message: "Publish angle-android ${{ inputs.version_name }}"

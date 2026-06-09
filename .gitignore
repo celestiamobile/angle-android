@@ -1,0 +1,9 @@
+depot_tools/
+angle/
+angle-*/
+staging/
+dist/
+*.tar.gz
+*.aar
+*.zip
+.DS_Store
