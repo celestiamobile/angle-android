@@ -9,6 +9,11 @@ on:
       arch:
         required: true
         type: string
+      ndk_version:
+        description: 'NDK r-version (e.g. r27c). Empty = use Chromium-bundled NDK.'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build:
@@ -29,7 +34,17 @@ jobs:
             libxkbcommon-dev libxshmfence-dev \
             openjdk-17-jdk-headless
 
+      - name: Install NDK ${{ inputs.ndk_version }}
+        id: setup_ndk
+        if: inputs.ndk_version != ''
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: ${{ inputs.ndk_version }}
+          add-to-path: false
+
       - name: Build
+        env:
+          ANGLE_NDK_ROOT: ${{ steps.setup_ndk.outputs.ndk-path }}
         run: |
           chmod +x build.sh
           ./build.sh ${{ inputs.platform }} ${{ inputs.arch }}

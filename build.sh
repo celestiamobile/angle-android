@@ -74,6 +74,22 @@ mkdir -p "$OUT_DIR"
 cp "../$ARGS_FILE" "$OUT_DIR/args.gn"
 
 gn gen "$OUT_DIR"
+
+# Optionally override the bundled NDK. If ANGLE_NDK_ROOT is set, append the
+# overrides to args.gn and regen. android_ndk_major_version is inferred from
+# the directory name (e.g. ".../ndk/27.2.12479018" → 27).
+if [ -n "${ANGLE_NDK_ROOT:-}" ]; then
+  echo "==> Overriding NDK: $ANGLE_NDK_ROOT"
+  NDK_VER_DIR="$(basename "$ANGLE_NDK_ROOT")"
+  NDK_MAJOR="${ANGLE_NDK_MAJOR_VERSION:-${NDK_VER_DIR%%.*}}"
+  cat >> "$OUT_DIR/args.gn" <<EOF
+android_ndk_root = "$ANGLE_NDK_ROOT"
+android_ndk_version = "$NDK_VER_DIR"
+android_ndk_major_version = $NDK_MAJOR
+EOF
+  gn gen "$OUT_DIR"
+fi
+
 autoninja --offline -C "$OUT_DIR" libEGL libGLESv2
 
 popd >/dev/null

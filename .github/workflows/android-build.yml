@@ -17,6 +17,11 @@ on:
         required: false
         default: false
         type: boolean
+      ndk_version:
+        description: 'NDK r-version (e.g. r27c). Empty = Chromium-bundled NDK.'
+        required: false
+        default: ''
+        type: string
 
 jobs:
   build-all:
@@ -35,6 +40,7 @@ jobs:
     with:
       platform: ${{ matrix.platform }}
       arch: ${{ matrix.arch }}
+      ndk_version: ${{ inputs.ndk_version || '' }}
 
   package:
     name: Package AAR & jniLibs
