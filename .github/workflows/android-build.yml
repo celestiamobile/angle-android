@@ -10,7 +10,13 @@ on:
       version_name:
         description: 'Major.minor version (e.g. 1.0); patch is github.run_number'
         required: false
+        default: '1.0'
         type: string
+      release:
+        description: 'Create GitHub Release and publish to Maven (gh-pages)'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   build-all:
@@ -93,7 +99,7 @@ jobs:
           retention-days: 30
 
       - name: Create Release
-        if: github.event_name == 'workflow_dispatch' && inputs.version_name != ''
+        if: inputs.release == true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.version_name }}.${{ github.run_number }}
@@ -107,7 +113,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to GitHub Pages Maven repo
-        if: github.event_name == 'workflow_dispatch' && inputs.version_name != ''
+        if: inputs.release == true
         env:
           VERSION: ${{ inputs.version_name }}.${{ github.run_number }}
         run: |
@@ -115,7 +121,7 @@ jobs:
           ./publish_maven.sh "$VERSION" "$PWD/dist/angle-android.aar" "$PWD/maven-out"
 
       - name: Deploy Maven repo to gh-pages
-        if: github.event_name == 'workflow_dispatch' && inputs.version_name != ''
+        if: inputs.release == true
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
