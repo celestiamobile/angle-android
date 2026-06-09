@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: 'Release version, e.g. 1.0.0 (leave empty to skip release)'
+        description: 'Major.minor version (e.g. 1.0); patch is github.run_number'
         required: false
         type: string
 
@@ -96,8 +96,8 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && inputs.version_name != ''
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.version_name }}
-          name: ${{ inputs.version_name }}
+          tag_name: ${{ inputs.version_name }}.${{ github.run_number }}
+          name: ${{ inputs.version_name }}.${{ github.run_number }}
           files: |
             dist/angle-android.aar
             dist/angle-android-jniLibs.zip
@@ -109,7 +109,7 @@ jobs:
       - name: Publish to GitHub Pages Maven repo
         if: github.event_name == 'workflow_dispatch' && inputs.version_name != ''
         env:
-          VERSION: ${{ inputs.version_name }}
+          VERSION: ${{ inputs.version_name }}.${{ github.run_number }}
         run: |
           chmod +x publish_maven.sh
           ./publish_maven.sh "$VERSION" "$PWD/dist/angle-android.aar" "$PWD/maven-out"
@@ -122,4 +122,4 @@ jobs:
           publish_dir: ./maven-out
           publish_branch: gh-pages
           keep_files: true
-          commit_message: "Publish angle-android ${{ inputs.version_name }}"
+          commit_message: "Publish angle-android ${{ inputs.version_name }}.${{ github.run_number }}"
