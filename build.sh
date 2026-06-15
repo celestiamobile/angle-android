@@ -31,7 +31,7 @@ gclient --version >/dev/null 2>&1 || true
 
 echo "==> Fetching ANGLE source"
 if [ -z "${ANGLE_COMMIT:-}" ]; then
-  ANGLE_COMMIT=$(git ls-remote https://chromium.googlesource.com/angle/angle HEAD | awk '{print $1}')
+  ANGLE_COMMIT=$(git ls-remote https://chromium.googlesource.com/angle/angle refs/heads/chromium/7871 | awk '{print $1}')
 fi
 echo "Using ANGLE commit: $ANGLE_COMMIT"
 

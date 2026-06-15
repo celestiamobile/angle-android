@@ -67,7 +67,7 @@ cat > "$DEST/$ARTIFACT-$VERSION.pom" <<EOF
   <licenses>
     <license>
       <name>BSD-3-Clause</name>
-      <url>https://chromium.googlesource.com/angle/angle/+/refs/heads/main/LICENSE</url>
+      <url>https://chromium.googlesource.com/angle/angle/+/refs/heads/chromium/7871/LICENSE</url>
     </license>
   </licenses>
 </project>
